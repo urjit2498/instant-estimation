@@ -9,6 +9,7 @@ interface DrawMeasureStepProps {
   initialAddress: string;
   initialCenter?: LatLngPoint;
   onBack: () => void;
+  onAddressChange?: (address: string) => void;
   onComplete: (measurement: Measurement) => void;
 }
 
@@ -17,6 +18,7 @@ export function DrawMeasureStep({
   initialAddress,
   initialCenter,
   onBack,
+  onAddressChange,
   onComplete,
 }: DrawMeasureStepProps) {
   const [address, setAddress] = useState(initialAddress);
@@ -38,6 +40,7 @@ export function DrawMeasureStep({
         initialAddress={address}
         onAddressSelected={(nextAddress, nextCenter) => {
           setAddress(nextAddress);
+          onAddressChange?.(nextAddress);
           if (nextCenter) setCenter(nextCenter);
         }}
       />

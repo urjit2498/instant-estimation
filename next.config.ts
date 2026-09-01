@@ -19,7 +19,7 @@ const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com https://*.gstatic.com https://*.google.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com",
+  "img-src 'self' data: blob: https://flagcdn.com https://*.googleapis.com https://*.gstatic.com https://*.google.com https://*.googleusercontent.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.google.com data: blob:",
   "frame-src 'self' https://*.google.com",

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getContractorBySlug } from "@/lib/mock/contractors";
-import { validateContactForm } from "@/lib/validation/contactForm";
+import { validateContactInfo } from "@/lib/validation/contactForm";
 import type { QuoteSubmission, QuoteSubmissionResult } from "@/types/quote";
 
 /**
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unknown contractor" }, { status: 404 });
   }
 
-  const errors = validateContactForm(contact);
+  const errors = validateContactInfo(contact);
   if (Object.keys(errors).length > 0) {
     return NextResponse.json({ error: "Invalid contact info", fields: errors }, { status: 400 });
   }

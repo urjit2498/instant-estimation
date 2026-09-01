@@ -66,6 +66,7 @@ interface QuoteFlowProps {
 export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFlowProps) {
   const [step, setStep] = useState<Step>("method");
   const [measurementMethod, setMeasurementMethod] = useState<MeasurementMethod | null>(null);
+  const [propertyAddress, setPropertyAddress] = useState(initialAddress);
   const [measurement, setMeasurement] = useState<Measurement | null>(null);
   const [materialId, setMaterialId] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<PriceEstimate | null>(null);
@@ -156,9 +157,10 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
 
         {step === "measure" && measurementMethod === "draw" && (
           <DrawMeasureStep
-            initialAddress={initialAddress}
+            initialAddress={propertyAddress}
             initialCenter={initialCenter}
             onBack={() => setStep("method")}
+            onAddressChange={setPropertyAddress}
             onComplete={handleMeasurementComplete}
           />
         )}
@@ -193,6 +195,7 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
 
         {step === "contact" && (
           <ContactStep
+            initialPropertyAddress={propertyAddress}
             onBack={() => setStep("estimate")}
             onSubmit={handleContactSubmit}
             isSubmitting={isSubmitting}
