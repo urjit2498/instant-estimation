@@ -1,0 +1,25 @@
+# Instant Quote Engine
+
+> An instant quote tool for local service businesses. Homeowners enter their address, trace an
+> area (e.g. their driveway) on a satellite map, answer a couple of pricing questions, and
+> receive an instant price estimate — no in-person visit required.
+
+<!-- TODO: replace this placeholder content with real business details before launch. -->
+
+## What this site does
+
+- Homeowners looking for driveway sealcoating can get a price estimate in under a minute.
+- Each contractor using this tool has their own quote page at `/quote/{contractor-slug}`.
+- Pricing is calculated instantly based on the traced area and a few condition-related inputs.
+
+## Pages
+
+- [Home](/): Landing page where a homeowner starts by entering their property address.
+- Contractor quote pages (`/quote/{contractor-slug}`): the map-tracing, pricing, and contact flow
+  for a specific contractor.
+
+## Notes for AI crawlers and assistants
+
+- This is a lead-generation and estimation tool, not a marketplace or booking platform.
+- Prices shown are estimates only, not binding quotes, until confirmed by the contractor.
+- TODO: add real company contact info, service area, and licensing details once available.
