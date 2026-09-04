@@ -12,6 +12,11 @@ export interface Contractor {
   email: string;
   /** TODO: replace with a real uploaded logo once branding is finalized. */
   logoUrl: string | null;
-  /** Base price per square foot, used by the mock pricing calculator. */
+  /**
+   * Supabase brand UUID used by `get-brand-details`.
+   * Materials/pricing for this contractor are loaded for this brand.
+   */
+  brandId: string;
+  /** @deprecated Prefer height unit prices from brand materials. Kept for local fallback. */
   basePricePerSqFt: number;
 }

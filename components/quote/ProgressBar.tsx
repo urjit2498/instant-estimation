@@ -1,4 +1,4 @@
-const STEP_LABELS = ["Method", "Measure", "Material", "Estimate", "Contact"] as const;
+const STEP_LABELS = ["Method", "Measure", "Material", "Contact", "Estimate"] as const;
 
 interface ProgressBarProps {
   /** 0-indexed current step, or STEP_LABELS.length to show the bar fully complete (confirmation). */

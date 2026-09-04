@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: QuotePageProps): Promise<Meta
 }
 
 // The page shell (heading, contractor info, JSON-LD) is server-rendered so it stays crawlable.
-// The measurement/material/estimate/contact experience inside <QuoteFlow> is necessarily a
+// The measurement/material/contact/estimate experience inside <QuoteFlow> is necessarily a
 // client component — Google Maps JS, canvas-based tracing, and multi-step form state all
 // require the browser — but it is mounted inside this server-rendered shell rather than
 // replacing the whole page, so crawlers still see the contractor name, description, and

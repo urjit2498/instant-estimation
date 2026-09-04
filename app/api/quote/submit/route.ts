@@ -19,7 +19,7 @@ function simulateLatency() {
 
 export async function POST(request: Request) {
   const body = (await request.json()) as QuoteSubmission;
-  const { contractorSlug, contact, measurement, materialId, priceEstimate } = body;
+  const { contractorSlug, contact, measurement, materialId, heightId, priceEstimate } = body;
 
   const contractor = getContractorBySlug(contractorSlug);
   if (!contractor) {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid contact info", fields: errors }, { status: 400 });
   }
 
-  if (!measurement || !materialId || !priceEstimate) {
+  if (!measurement || !materialId || !heightId || !priceEstimate) {
     return NextResponse.json({ error: "Missing quote data" }, { status: 400 });
   }
 

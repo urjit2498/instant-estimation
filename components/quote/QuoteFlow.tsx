@@ -41,14 +41,14 @@ function MeasureStepLoading({ label }: { label: string }) {
   return <p className="py-8 text-center text-sm text-asphalt-700">{label}</p>;
 }
 
-type Step = "method" | "measure" | "material" | "estimate" | "contact" | "confirmation";
+type Step = "method" | "measure" | "material" | "contact" | "estimate" | "confirmation";
 
 const STEP_INDEX: Record<Step, number> = {
   method: 0,
   measure: 1,
   material: 2,
-  estimate: 3,
-  contact: 4,
+  contact: 3,
+  estimate: 4,
   confirmation: 5,
 };
 
@@ -62,6 +62,8 @@ interface QuoteFlowProps {
  * Owns the whole multi-step flow as in-memory state (no per-step URL/query sync). Simple and
  * fast to build; if deep-linking to a specific step or preserving position across a reload
  * becomes a requirement, this is the place to switch to URL-driven step state.
+ *
+ * Order: contact is collected before the price is revealed (client requirement).
  */
 export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFlowProps) {
   const [step, setStep] = useState<Step>("method");
@@ -69,6 +71,8 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
   const [propertyAddress, setPropertyAddress] = useState(initialAddress);
   const [measurement, setMeasurement] = useState<Measurement | null>(null);
   const [materialId, setMaterialId] = useState<string | null>(null);
+  const [heightId, setHeightId] = useState<string | null>(null);
+  const [contact, setContact] = useState<ContactInfo | null>(null);
   const [estimate, setEstimate] = useState<PriceEstimate | null>(null);
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,57 +83,63 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
     setStep("material");
   }
 
-  async function handleMaterialSubmit(selectedMaterialId: string) {
-    if (!measurement) return;
-    setMaterialId(selectedMaterialId);
+  function handleMaterialSubmit(selection: { materialId: string; heightId: string }) {
+    setMaterialId(selection.materialId);
+    setHeightId(selection.heightId);
+    setStep("contact");
+  }
+
+  async function handleContactSubmit(contactInfo: ContactInfo) {
+    if (!measurement || !materialId || !heightId) return;
+    setContact(contactInfo);
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await fetch("/api/quote/calculate", {
+      const createRes = await fetch("/api/quote/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contractorSlug: contractor.slug,
-          measurement,
-          materialId: selectedMaterialId,
+          contact: contactInfo,
+          materialId,
+          heightId,
         }),
       });
-      if (!res.ok) throw new Error("Failed to calculate estimate");
-      const data: PriceEstimate = await res.json();
-      setEstimate(data);
-      setStep("estimate");
-    } catch {
-      setErrorMessage("Something went wrong calculating your estimate. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+      const createData = await createRes.json();
+      if (!createRes.ok) {
+        throw new Error(createData.error || "Failed to save your info");
+      }
 
-  async function handleContactSubmit(contact: ContactInfo) {
-    if (!measurement || !materialId || !estimate) return;
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    try {
-      const res = await fetch("/api/quote/submit", {
+      const calcRes = await fetch("/api/quote/calculate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contractorSlug: contractor.slug,
           measurement,
           materialId,
-          priceEstimate: estimate,
-          contact,
+          heightId,
         }),
       });
-      if (!res.ok) throw new Error("Failed to submit quote");
-      const data: { success: true; confirmationId: string } = await res.json();
-      setConfirmationId(data.confirmationId);
-      setStep("confirmation");
-    } catch {
-      setErrorMessage("Something went wrong submitting your info. Please try again.");
+      if (!calcRes.ok) throw new Error("Failed to calculate estimate");
+      const estimateData: PriceEstimate = await calcRes.json();
+
+      setConfirmationId(createData.confirmationId as string);
+      setEstimate(estimateData);
+      setStep("estimate");
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong saving your info. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleEstimateConfirm() {
+    if (!confirmationId) return;
+    setStep("confirmation");
   }
 
   return (
@@ -179,8 +189,18 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
 
         {step === "material" && (
           <MaterialSelectStep
+            contractorSlug={contractor.slug}
             onBack={() => setStep("measure")}
             onSubmit={handleMaterialSubmit}
+            isSubmitting={false}
+          />
+        )}
+
+        {step === "contact" && (
+          <ContactStep
+            initialPropertyAddress={propertyAddress}
+            onBack={() => setStep("material")}
+            onSubmit={handleContactSubmit}
             isSubmitting={isSubmitting}
           />
         )}
@@ -188,16 +208,8 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
         {step === "estimate" && estimate && (
           <EstimateStep
             estimate={estimate}
-            onBack={() => setStep("material")}
-            onContinue={() => setStep("contact")}
-          />
-        )}
-
-        {step === "contact" && (
-          <ContactStep
-            initialPropertyAddress={propertyAddress}
-            onBack={() => setStep("estimate")}
-            onSubmit={handleContactSubmit}
+            onBack={() => setStep("contact")}
+            onContinue={handleEstimateConfirm}
             isSubmitting={isSubmitting}
           />
         )}

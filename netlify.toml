@@ -1,0 +1,18 @@
+# Netlify + Next.js (@netlify/plugin-nextjs handles publish output).
+# Set real env values in Netlify UI — never commit secrets.
+
+[build]
+  command = "yarn build"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Next.js inlines NEXT_PUBLIC_* into the client bundle (intentional / public).
+  # Supabase anon/publishable keys also appear in server build output.
+  # Omit those so Netlify secrets scanning does not fail the deploy.
+  # Keep true secrets (e.g. SUPABASE_SERVICE_ROLE_KEY) marked Secret in Netlify
+  # and never prefix them with NEXT_PUBLIC_.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,NEXT_PUBLIC_SITE_URL,SUPABASE_URL,SUPABASE_ANON_KEY"
+  SECRETS_SCAN_OMIT_PATHS = ".next/**,.netlify/**,node_modules/**"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

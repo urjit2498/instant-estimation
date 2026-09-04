@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
+    "@supabase/supabase-js": "^2.49.1",
     "@turf/area": "^7.4.0",
     "@turf/distance": "^7.4.0",
     "@turf/helpers": "^7.4.0",

@@ -1,7 +1,7 @@
 "use client";
 
 import { GoogleMap, Marker, Polygon, Polyline } from "@react-google-maps/api";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { BackButton } from "@/components/quote/BackButton";
 import { SegmentLengthLabels } from "@/components/quote/SegmentLengthLabels";
 import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
@@ -9,7 +9,6 @@ import { computeAreaSqFt, computeLengthFt } from "@/lib/geo/polygon";
 import { DRAWING_PEN_CURSOR } from "@/lib/map/drawingCursor";
 import type { LatLngPoint, Measurement, ShapeType } from "@/types/quote";
 
-const DEFAULT_CENTER: LatLngPoint = { lat: 39.8283, lng: -98.5795 }; // geographic center of the US, used until we have a real address
 const MAP_CONTAINER_STYLE = { width: "100%", height: "100%" };
 const MAP_OPTIONS: google.maps.MapOptions = {
   mapTypeId: "satellite",
@@ -26,15 +25,14 @@ const MAP_OPTIONS: google.maps.MapOptions = {
 };
 
 interface DrawStepProps {
-  address: string;
-  center?: LatLngPoint;
+  /** Required — parent only mounts this step after an address location is resolved. */
+  center: LatLngPoint;
   onBack: () => void;
   onComplete: (measurement: Measurement) => void;
 }
 
-export function DrawStep({ address, center: centerProp, onBack, onComplete }: DrawStepProps) {
+export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
   const { isLoaded, loadError, apiKeyConfigured } = useGoogleMapsLoader();
-  const [center, setCenter] = useState<LatLngPoint>(centerProp ?? DEFAULT_CENTER);
   const [shapeType, setShapeType] = useState<ShapeType>("polygon");
   const [path, setPath] = useState<LatLngPoint[]>([]);
   const [isDrawing, setIsDrawing] = useState(true);
@@ -50,28 +48,6 @@ export function DrawStep({ address, center: centerProp, onBack, onComplete }: Dr
     }),
     [isDrawing]
   );
-
-  // Re-center whenever the caller passes a new resolved lat/lng (e.g. the user picks a new
-  // address from the autocomplete dropdown, live, on the same screen). Deliberately depends on
-  // the lat/lng primitives rather than the centerProp object reference, which would re-fire this
-  // effect on every parent re-render even when the address hasn't actually changed.
-  useEffect(() => {
-    if (centerProp) setCenter(centerProp);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [centerProp?.lat, centerProp?.lng]);
-
-  // Manual-entry fallback: no lat/lng was picked from the autocomplete dropdown, so best-effort
-  // geocode the typed address to at least center the map somewhere useful.
-  useEffect(() => {
-    if (centerProp || !isLoaded || !address) return;
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address }, (results, status) => {
-      if (status === "OK" && results?.[0]?.geometry?.location) {
-        const loc = results[0].geometry.location;
-        setCenter({ lat: loc.lat(), lng: loc.lng() });
-      }
-    });
-  }, [address, centerProp, isLoaded]);
 
   const handleMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {

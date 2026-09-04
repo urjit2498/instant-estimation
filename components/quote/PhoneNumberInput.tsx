@@ -4,14 +4,18 @@ import { CountryCodeSelect } from "@/components/quote/CountryCodeSelect";
 import { getCountryByIso2 } from "@/lib/phone/countries";
 import { formatNationalPhone } from "@/lib/phone/format";
 
-const inputClass =
-  "w-full rounded-md border border-asphalt-200 bg-paper-raised px-3 py-2 text-sm text-asphalt-950 focus:border-asphalt-950 focus:outline-none focus:ring-2 focus:ring-accent/50";
+const inputBaseClass =
+  "w-full rounded-md border bg-paper-raised px-3 py-2 text-sm text-asphalt-950 focus:outline-none focus:ring-2";
+const inputOkClass =
+  "border-asphalt-200 focus:border-asphalt-950 focus:ring-accent/50";
+const inputErrorClass = "border-error focus:border-error focus:ring-error/30";
 
 interface PhoneNumberInputProps {
   countryIso2: string;
   nationalNumber: string;
   onCountryChange: (iso2: string) => void;
   onNationalNumberChange: (formatted: string) => void;
+  onBlur?: () => void;
   error?: string;
   disabled?: boolean;
 }
@@ -21,6 +25,7 @@ export function PhoneNumberInput({
   nationalNumber,
   onCountryChange,
   onNationalNumberChange,
+  onBlur,
   error,
   disabled,
 }: PhoneNumberInputProps) {
@@ -62,11 +67,12 @@ export function PhoneNumberInput({
             autoComplete="tel-national"
             value={nationalNumber}
             onChange={(e) => handleNumberChange(e.target.value)}
+            onBlur={onBlur}
             placeholder={country.example}
             disabled={disabled}
             aria-invalid={!!error}
             aria-describedby={error ? "phone-error" : undefined}
-            className={inputClass}
+            className={`${inputBaseClass} ${error ? inputErrorClass : inputOkClass}`}
           />
         </div>
       </div>

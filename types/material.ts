@@ -1,13 +1,27 @@
 /**
- * A selectable sealcoating material/product, shown as a single-select card grid in step 3.
- * TODO: this will come from a real backend catalog eventually; lib/mock/materials.ts stands in.
- *
- * `imageUrl` matches the shape the backend dev agreed to return (id, name, imageUrl,
- * shortDescription, category). `priceMultiplier` is an EXTRA field beyond that contract, used
- * only by our mock pricing route — deliberately never sent to the client as part of a price the
- * client could tamper with; the real pricing API should look up material cost server-side by id
- * the same way our mock does in lib/mock/pricing.ts.
+ * A selectable product shown in the material step.
+ * Sourced from `get-brand-details` (mapped server-side).
  */
+export interface MaterialHeightOption {
+  id: string;
+  title: string;
+  /** Unit price from backend — used only after server re-lookup for estimates. */
+  price: number;
+}
+
+export interface MaterialListItem {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  shortDescription: string;
+  /** Category UUID from brand material API. */
+  categoryId: string | null;
+  /** Resolved display label from static category list. */
+  category: string | null;
+  heights: MaterialHeightOption[];
+}
+
+/** @deprecated Prefer MaterialListItem + heights from the brand API. */
 export interface Material {
   id: string;
   name: string;
@@ -16,6 +30,3 @@ export interface Material {
   category: string;
   priceMultiplier: number;
 }
-
-/** Public shape returned by GET /api/materials — omits priceMultiplier (see note above). */
-export type MaterialListItem = Omit<Material, "priceMultiplier">;

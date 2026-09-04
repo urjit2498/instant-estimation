@@ -25,18 +25,18 @@ export interface Measurement {
   path?: LatLngPoint[];
 }
 
-/** Response shape expected from the real pricing API. Mocked for now in lib/mock/pricing.ts. */
+/** Response shape from POST /api/quote/calculate. */
 export interface PriceEstimate {
   price: number;
   currency: "USD";
   breakdown: {
-    baseRatePerSqFt: number;
-    areaSqFt: number;
+    quantity: number;
+    quantityUnit: "ft" | "sq ft";
+    ratePerUnit: number;
     materialName: string;
-    materialMultiplier: number;
+    heightTitle?: string;
     subtotal: number;
   };
-  /** TODO: real API should return a stable estimate id we can reference when the customer later submits contact info. */
   estimateId: string;
 }
 
@@ -52,6 +52,8 @@ export interface ContactInfo {
   /** Full international number in E.164 form, e.g. +15551234567 */
   phone: string;
   propertyAddress: string;
+  /** 5-digit US zip for create-quote. */
+  zipCode: string;
   preferredContactMethod: PreferredContactMethod;
   notes?: string;
 }
@@ -61,6 +63,7 @@ export interface QuoteSubmission {
   contractorSlug: string;
   measurement: Measurement;
   materialId: string;
+  heightId: string;
   priceEstimate: PriceEstimate;
   contact: ContactInfo;
 }

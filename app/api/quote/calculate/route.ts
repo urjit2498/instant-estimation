@@ -1,48 +1,55 @@
 import { NextResponse } from "next/server";
 import { getContractorBySlug } from "@/lib/mock/contractors";
-import { getMaterialById } from "@/lib/mock/materials";
-import { calculateMockPrice } from "@/lib/mock/pricing";
+import { calculateBrandPrice } from "@/lib/pricing/brandPrice";
+import {
+  fetchBrandDetails,
+  findBrandHeight,
+  findBrandMaterial,
+} from "@/lib/supabase/brandDetails";
 import type { Measurement } from "@/types/quote";
 
 /**
- * TODO: this entire route is a placeholder standing in for the backend dev's real pricing API.
- * Delete it (or keep it as a local fallback) once that API exists — the frontend just needs the
- * request/response shape below to stay compatible.
- *
- * Deliberately takes a `materialId`, not a client-supplied price — the server looks up the
- * material (and its price multiplier) itself, the same way the real pricing API should, so a
- * tampered client request can't set its own price.
+ * Server-side estimate using brand material heights from `get-brand-details`.
+ * Client sends materialId + heightId only — unit price is looked up on the server.
  */
 
 interface CalculateRequestBody {
   contractorSlug: string;
   measurement: Measurement;
   materialId: string;
-}
-
-// Small artificial delay so loading states are visible during development.
-function simulateLatency() {
-  return new Promise((resolve) => setTimeout(resolve, 500));
+  heightId: string;
 }
 
 export async function POST(request: Request) {
   const body = (await request.json()) as CalculateRequestBody;
-  const { contractorSlug, measurement, materialId } = body;
+  const { contractorSlug, measurement, materialId, heightId } = body;
 
   const contractor = getContractorBySlug(contractorSlug);
   if (!contractor) {
     return NextResponse.json({ error: "Unknown contractor" }, { status: 404 });
   }
-  if (!measurement || !materialId) {
-    return NextResponse.json({ error: "Missing measurement or materialId" }, { status: 400 });
-  }
-  const material = getMaterialById(materialId);
-  if (!material) {
-    return NextResponse.json({ error: "Unknown material" }, { status: 404 });
+  if (!measurement || !materialId || !heightId) {
+    return NextResponse.json(
+      { error: "Missing measurement, materialId, or heightId" },
+      { status: 400 },
+    );
   }
 
-  await simulateLatency();
+  try {
+    const details = await fetchBrandDetails(contractor.brandId);
+    const material = findBrandMaterial(details.material, materialId);
+    if (!material) {
+      return NextResponse.json({ error: "Unknown material" }, { status: 404 });
+    }
+    const height = findBrandHeight(material, heightId);
+    if (!height) {
+      return NextResponse.json({ error: "Unknown height option" }, { status: 404 });
+    }
 
-  const estimate = calculateMockPrice(contractor, measurement, material);
-  return NextResponse.json(estimate);
+    const estimate = calculateBrandPrice(measurement, material, height);
+    return NextResponse.json(estimate);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to calculate estimate";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 }

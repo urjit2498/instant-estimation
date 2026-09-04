@@ -7,17 +7,27 @@ interface EstimateStepProps {
   estimate: PriceEstimate;
   onBack: () => void;
   onContinue: () => void;
+  isSubmitting?: boolean;
 }
 
-export function EstimateStep({ estimate, onBack, onContinue }: EstimateStepProps) {
+export function EstimateStep({
+  estimate,
+  onBack,
+  onContinue,
+  isSubmitting = false,
+}: EstimateStepProps) {
+  const { breakdown } = estimate;
+  const quantityLabel = breakdown.quantityUnit === "ft" ? "Length" : "Area";
+  const rateLabel =
+    breakdown.quantityUnit === "ft" ? "Rate per ft" : "Rate per sq ft";
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="font-heading text-xl font-semibold text-asphalt-950">Your instant estimate</h2>
         <p className="mt-1 text-sm text-asphalt-700">
-          {/* TODO: once the real pricing API exists, remove this "mock" disclosure. */}
-          Estimated with placeholder pricing logic — final numbers will come from the real
-          pricing API. This is an estimate, not a binding quote.
+          Based on your measurement and selected material. This is an estimate, not a binding
+          quote.
         </p>
       </div>
 
@@ -30,37 +40,38 @@ export function EstimateStep({ estimate, onBack, onContinue }: EstimateStepProps
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-md border border-asphalt-200 bg-paper-raised p-3">
-          <dt className="text-asphalt-700">Area</dt>
+          <dt className="text-asphalt-700">{quantityLabel}</dt>
           <dd className="font-mono font-medium text-asphalt-950">
-            {estimate.breakdown.areaSqFt.toLocaleString()} sq ft
+            {breakdown.quantity.toLocaleString()} {breakdown.quantityUnit}
           </dd>
         </div>
         <div className="rounded-md border border-asphalt-200 bg-paper-raised p-3">
           <dt className="text-asphalt-700">Material</dt>
-          <dd className="font-medium text-asphalt-950">{estimate.breakdown.materialName}</dd>
+          <dd className="font-medium text-asphalt-950">{breakdown.materialName}</dd>
         </div>
         <div className="rounded-md border border-asphalt-200 bg-paper-raised p-3">
-          <dt className="text-asphalt-700">Rate per sq ft</dt>
+          <dt className="text-asphalt-700">{rateLabel}</dt>
           <dd className="font-mono font-medium text-asphalt-950">
-            ${estimate.breakdown.baseRatePerSqFt.toFixed(2)}
+            ${breakdown.ratePerUnit.toFixed(2)}
           </dd>
         </div>
         <div className="rounded-md border border-asphalt-200 bg-paper-raised p-3">
-          <dt className="text-asphalt-700">Material multiplier</dt>
+          <dt className="text-asphalt-700">Subtotal</dt>
           <dd className="font-mono font-medium text-asphalt-950">
-            {estimate.breakdown.materialMultiplier.toFixed(2)}x
+            ${breakdown.subtotal.toLocaleString()}
           </dd>
         </div>
       </dl>
 
       <div className="flex items-center justify-between">
-        <BackButton onClick={onBack} />
+        <BackButton onClick={onBack} disabled={isSubmitting} />
         <button
           type="button"
           onClick={onContinue}
+          disabled={isSubmitting}
           className="btn-gradient rounded-md px-5 py-2.5 text-sm font-medium"
         >
-          Looks good, continue
+          Finish
         </button>
       </div>
     </div>

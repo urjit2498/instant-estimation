@@ -18,12 +18,21 @@ export function getGoogleMapsApiKey(): string {
 }
 
 /**
- * TODO: server-only vars for the future Supabase integration. Not used yet — declared here so
- * the public/server boundary is established up front. Read these only from server-side code.
+ * Server-only Supabase env. Read these only from Route Handlers / Server Components /
+ * Server Actions — never import into a "use client" file.
+ *
+ * Prefer the anon key + RLS for normal writes. Use service role only when you must bypass RLS.
  */
 export function getSupabaseServerEnv() {
-  return {
-    url: process.env.SUPABASE_URL,
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  };
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error(
+      "Missing SUPABASE_URL or SUPABASE_ANON_KEY. Add them to .env.local.",
+    );
+  }
+
+  return { url, anonKey, serviceRoleKey };
 }

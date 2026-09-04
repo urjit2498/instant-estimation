@@ -31,7 +31,7 @@ export function AddressSearchInput({ initialAddress, onAddressSelected }: Addres
   function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!address.trim()) return;
-    // No place selected from the dropdown — the map step falls back to geocoding this itself.
+    // No place selected from the dropdown — parent geocodes this before showing the map.
     onAddressSelected(address.trim());
   }
 

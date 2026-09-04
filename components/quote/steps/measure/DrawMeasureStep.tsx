@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { BackButton } from "@/components/quote/BackButton";
 import { AddressSearchInput } from "@/components/quote/steps/measure/AddressSearchInput";
 import { DrawStep } from "@/components/quote/steps/measure/DrawStep";
+import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import type { LatLngPoint, Measurement } from "@/types/quote";
 
 interface DrawMeasureStepProps {
@@ -13,7 +15,7 @@ interface DrawMeasureStepProps {
   onComplete: (measurement: Measurement) => void;
 }
 
-/** Address search and the satellite map live on one screen, per the merged flow. */
+/** Address search first; satellite map only appears after a property location is resolved. */
 export function DrawMeasureStep({
   initialAddress,
   initialCenter,
@@ -21,8 +23,64 @@ export function DrawMeasureStep({
   onAddressChange,
   onComplete,
 }: DrawMeasureStepProps) {
+  const { isLoaded } = useGoogleMapsLoader();
   const [address, setAddress] = useState(initialAddress);
   const [center, setCenter] = useState<LatLngPoint | undefined>(initialCenter);
+  const [pendingGeocodeAddress, setPendingGeocodeAddress] = useState<string | null>(
+    initialCenter || !initialAddress.trim() ? null : initialAddress.trim(),
+  );
+  const [isResolvingLocation, setIsResolvingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  function handleAddressSelected(nextAddress: string, nextCenter?: LatLngPoint) {
+    const trimmed = nextAddress.trim();
+    setAddress(trimmed);
+    onAddressChange?.(trimmed);
+    setLocationError(null);
+
+    if (nextCenter) {
+      setPendingGeocodeAddress(null);
+      setIsResolvingLocation(false);
+      setCenter(nextCenter);
+      return;
+    }
+
+    if (!trimmed) {
+      setPendingGeocodeAddress(null);
+      setCenter(undefined);
+      return;
+    }
+
+    setCenter(undefined);
+    setPendingGeocodeAddress(trimmed);
+  }
+
+  useEffect(() => {
+    if (!pendingGeocodeAddress || !isLoaded) return;
+
+    let cancelled = false;
+    setIsResolvingLocation(true);
+    setLocationError(null);
+
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: pendingGeocodeAddress }, (results, status) => {
+      if (cancelled) return;
+      setIsResolvingLocation(false);
+      setPendingGeocodeAddress(null);
+
+      if (status === "OK" && results?.[0]?.geometry?.location) {
+        const loc = results[0].geometry.location;
+        setCenter({ lat: loc.lat(), lng: loc.lng() });
+        return;
+      }
+
+      setLocationError("We couldn't find that address. Pick a suggestion from the list.");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingGeocodeAddress, isLoaded]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,14 +96,47 @@ export function DrawMeasureStep({
 
       <AddressSearchInput
         initialAddress={address}
-        onAddressSelected={(nextAddress, nextCenter) => {
-          setAddress(nextAddress);
-          onAddressChange?.(nextAddress);
-          if (nextCenter) setCenter(nextCenter);
-        }}
+        onAddressSelected={handleAddressSelected}
       />
 
-      <DrawStep address={address} center={center} onBack={onBack} onComplete={onComplete} />
+      {locationError && (
+        <div
+          role="alert"
+          className="rounded-md border border-error bg-error-bg px-4 py-3 text-sm text-asphalt-950"
+        >
+          {locationError}
+        </div>
+      )}
+
+      {center ? (
+        <DrawStep
+          key={`${center.lat.toFixed(5)}-${center.lng.toFixed(5)}`}
+          center={center}
+          onBack={onBack}
+          onComplete={onComplete}
+        />
+      ) : (
+        <>
+          <div className="-mx-4 flex h-80 w-[calc(100%+2rem)] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-asphalt-200 bg-paper-raised px-6 text-center sm:-mx-6 sm:h-96 sm:w-[calc(100%+3rem)]">
+            {isResolvingLocation ? (
+              <p className="text-sm text-asphalt-700">Finding your property…</p>
+            ) : (
+              <>
+                <p className="font-heading text-sm font-semibold text-asphalt-950">
+                  Map will appear here
+                </p>
+                <p className="max-w-sm text-sm text-asphalt-700">
+                  Enter your property address above and choose it from the suggestions to load a
+                  satellite view you can trace on.
+                </p>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <BackButton onClick={onBack} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
