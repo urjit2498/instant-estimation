@@ -25,7 +25,7 @@ export interface Measurement {
   path?: LatLngPoint[];
 }
 
-/** Response shape from POST /api/quote/calculate. */
+/** Estimate shown after create-quote (also produced by POST /api/quote/calculate). */
 export interface PriceEstimate {
   price: number;
   currency: "USD";

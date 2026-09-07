@@ -103,6 +103,7 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
           contact: contactInfo,
           materialId,
           heightId,
+          measurement,
         }),
       });
       const createData = await createRes.json();
@@ -110,18 +111,10 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
         throw new Error(createData.error || "Failed to save your info");
       }
 
-      const calcRes = await fetch("/api/quote/calculate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contractorSlug: contractor.slug,
-          measurement,
-          materialId,
-          heightId,
-        }),
-      });
-      if (!calcRes.ok) throw new Error("Failed to calculate estimate");
-      const estimateData: PriceEstimate = await calcRes.json();
+      const estimateData = createData.estimate as PriceEstimate | undefined;
+      if (!estimateData || typeof estimateData.price !== "number") {
+        throw new Error("Estimate missing from quote response");
+      }
 
       setConfirmationId(createData.confirmationId as string);
       setEstimate(estimateData);
