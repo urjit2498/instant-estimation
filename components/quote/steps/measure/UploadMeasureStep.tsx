@@ -1,6 +1,8 @@
 "use client";
 
 import { BackButton } from "@/components/quote/BackButton";
+import { DrawingToolbar } from "@/components/quote/DrawingToolbar";
+import { StepActions } from "@/components/quote/StepActions";
 import { useRef, useState } from "react";
 import {
   computeCalibrationScale,
@@ -158,65 +160,27 @@ export function UploadMeasureStep({ onBack, onComplete }: UploadMeasureStepProps
           )}
 
           {phase === "trace" && (
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-asphalt-700">Shape:</span>
-              <button
-                type="button"
-                onClick={() => switchShapeType("polygon")}
-                className={`rounded-full px-3 py-1 ${shapeType === "polygon" ? "bg-asphalt-950 text-paper" : "bg-paper-raised text-asphalt-700 ring-1 ring-asphalt-200"}`}
-              >
-                Area (polygon)
-              </button>
-              <button
-                type="button"
-                onClick={() => switchShapeType("line")}
-                className={`rounded-full px-3 py-1 ${shapeType === "line" ? "bg-asphalt-950 text-paper" : "bg-paper-raised text-asphalt-700 ring-1 ring-asphalt-200"}`}
-              >
-                Line
-              </button>
-              <span className="mx-2 h-4 w-px bg-asphalt-200" aria-hidden />
-              <button
-                type="button"
-                onClick={undoLastTracePoint}
-                disabled={tracePoints.length === 0}
-                className="rounded-full bg-paper-raised px-3 py-1 text-asphalt-700 ring-1 ring-asphalt-200 disabled:opacity-40"
-              >
-                Undo point
-              </button>
-              <button
-                type="button"
-                onClick={clearTrace}
-                disabled={tracePoints.length === 0}
-                className="rounded-full bg-paper-raised px-3 py-1 text-asphalt-700 ring-1 ring-asphalt-200 disabled:opacity-40"
-              >
-                Clear
-              </button>
-              {isDrawing ? (
+            <DrawingToolbar
+              shapeType={shapeType}
+              onShapeTypeChange={switchShapeType}
+              pointCount={tracePoints.length}
+              canFinish={canFinish}
+              isDrawing={isDrawing}
+              onUndo={undoLastTracePoint}
+              onClear={clearTrace}
+              onToggleDrawing={() => setIsDrawing((prev) => !prev)}
+              finishLabel="Finish"
+              resumeLabel="Resume"
+              extra={
                 <button
                   type="button"
-                  onClick={() => setIsDrawing(false)}
-                  disabled={!canFinish}
-                  className="rounded-full bg-success px-3 py-1 text-white disabled:opacity-40"
+                  onClick={recalibrate}
+                  className="ml-auto text-xs text-asphalt-700 underline"
                 >
-                  Finish tracing
+                  Recalibrate
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsDrawing(true)}
-                  className="rounded-full bg-paper-raised px-3 py-1 text-asphalt-700 ring-1 ring-asphalt-200"
-                >
-                  Resume tracing
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={recalibrate}
-                className="ml-auto text-xs text-asphalt-700 underline"
-              >
-                Recalibrate
-              </button>
-            </div>
+              }
+            />
           )}
 
           <div className="flex justify-center overflow-auto rounded-lg border border-asphalt-200 bg-asphalt-950 p-2">
@@ -275,10 +239,10 @@ export function UploadMeasureStep({ onBack, onComplete }: UploadMeasureStepProps
               </svg>
 
               {phase === "trace" && (
-                <div className="pointer-events-none absolute left-2 top-2 rounded-full bg-paper-raised/95 px-3 py-1.5 text-xs font-medium text-asphalt-950 shadow-md ring-1 ring-asphalt-200">
+                <div className="pointer-events-none absolute left-2 top-2 max-w-[calc(100%-1rem)] rounded-full bg-paper-raised/95 px-3 py-1.5 text-xs font-medium text-asphalt-950 shadow-md ring-1 ring-asphalt-200">
                   {tracePoints.length === 0
-                    ? "Click the image to place your first point"
-                    : `${tracePoints.length} point${tracePoints.length === 1 ? "" : "s"} placed`}
+                    ? "Tap to place a point"
+                    : `${tracePoints.length} point${tracePoints.length === 1 ? "" : "s"} · drag to adjust`}
                   {measurementLabel && (
                     <span className="ml-2 rounded-full bg-asphalt-950 px-2 py-0.5 font-mono text-white">
                       {measurementLabel}
@@ -329,13 +293,14 @@ export function UploadMeasureStep({ onBack, onComplete }: UploadMeasureStepProps
           )}
 
           {phase === "trace" && (
-            <div className="flex items-center gap-3">
-              <BackButton onClick={onBack} />
-              <p className="min-w-0 flex-1 text-sm text-asphalt-700">
-                {measurementLabel
+            <StepActions
+              onBack={onBack}
+              message={
+                measurementLabel
                   ? `${shapeType === "polygon" ? "Area" : "Length"}: ${measurementLabel}`
-                  : "Trace a shape to see its measurement."}
-              </p>
+                  : "Trace a shape to see its measurement."
+              }
+            >
               <button
                 type="button"
                 onClick={() => measurement && onComplete(measurement)}
@@ -344,7 +309,7 @@ export function UploadMeasureStep({ onBack, onComplete }: UploadMeasureStepProps
               >
                 Continue
               </button>
-            </div>
+            </StepActions>
           )}
 
           {phase === "calibrate" && (

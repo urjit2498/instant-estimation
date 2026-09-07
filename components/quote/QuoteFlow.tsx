@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import { splitAddressAndZip } from "@/lib/geo/address";
 import type { Contractor } from "@/types/contractor";
 import type {
   ContactInfo,
@@ -68,11 +69,13 @@ interface QuoteFlowProps {
 export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFlowProps) {
   const [step, setStep] = useState<Step>("method");
   const [measurementMethod, setMeasurementMethod] = useState<MeasurementMethod | null>(null);
-  const [propertyAddress, setPropertyAddress] = useState(initialAddress);
+  const [propertyAddress, setPropertyAddress] = useState(
+    () => splitAddressAndZip(initialAddress).address,
+  );
+  const [zipCode, setZipCode] = useState(() => splitAddressAndZip(initialAddress).zipCode);
   const [measurement, setMeasurement] = useState<Measurement | null>(null);
   const [materialId, setMaterialId] = useState<string | null>(null);
   const [heightId, setHeightId] = useState<string | null>(null);
-  const [contact, setContact] = useState<ContactInfo | null>(null);
   const [estimate, setEstimate] = useState<PriceEstimate | null>(null);
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,7 +94,6 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
 
   async function handleContactSubmit(contactInfo: ContactInfo) {
     if (!measurement || !materialId || !heightId) return;
-    setContact(contactInfo);
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
@@ -163,7 +165,10 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
             initialAddress={propertyAddress}
             initialCenter={initialCenter}
             onBack={() => setStep("method")}
-            onAddressChange={setPropertyAddress}
+            onAddressChange={(nextAddress, nextZip) => {
+              setPropertyAddress(nextAddress);
+              setZipCode(nextZip ?? "");
+            }}
             onComplete={handleMeasurementComplete}
           />
         )}
@@ -185,13 +190,13 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
             contractorSlug={contractor.slug}
             onBack={() => setStep("measure")}
             onSubmit={handleMaterialSubmit}
-            isSubmitting={false}
           />
         )}
 
         {step === "contact" && (
           <ContactStep
             initialPropertyAddress={propertyAddress}
+            initialZipCode={zipCode}
             onBack={() => setStep("material")}
             onSubmit={handleContactSubmit}
             isSubmitting={isSubmitting}
@@ -203,7 +208,6 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
             estimate={estimate}
             onBack={() => setStep("contact")}
             onContinue={handleEstimateConfirm}
-            isSubmitting={isSubmitting}
           />
         )}
 

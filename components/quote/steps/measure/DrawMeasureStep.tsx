@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BackButton } from "@/components/quote/BackButton";
 import { AddressSearchInput } from "@/components/quote/steps/measure/AddressSearchInput";
 import { DrawStep } from "@/components/quote/steps/measure/DrawStep";
+import { addressPartsFromComponents, splitAddressAndZip } from "@/lib/geo/address";
 import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import type { LatLngPoint, Measurement } from "@/types/quote";
 
@@ -11,7 +12,7 @@ interface DrawMeasureStepProps {
   initialAddress: string;
   initialCenter?: LatLngPoint;
   onBack: () => void;
-  onAddressChange?: (address: string) => void;
+  onAddressChange?: (address: string, zipCode?: string) => void;
   onComplete: (measurement: Measurement) => void;
 }
 
@@ -32,10 +33,13 @@ export function DrawMeasureStep({
   const [isResolvingLocation, setIsResolvingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  function handleAddressSelected(nextAddress: string, nextCenter?: LatLngPoint) {
-    const trimmed = nextAddress.trim();
+  function handleAddressSelected(nextAddress: string, nextCenter?: LatLngPoint, zipCode?: string) {
+    const parts = zipCode
+      ? { address: nextAddress.trim(), zipCode }
+      : splitAddressAndZip(nextAddress);
+    const trimmed = parts.address;
     setAddress(trimmed);
-    onAddressChange?.(trimmed);
+    onAddressChange?.(trimmed, parts.zipCode || undefined);
     setLocationError(null);
 
     if (nextCenter) {
@@ -70,6 +74,12 @@ export function DrawMeasureStep({
 
       if (status === "OK" && results?.[0]?.geometry?.location) {
         const loc = results[0].geometry.location;
+        const parts = addressPartsFromComponents(
+          results[0].address_components,
+          results[0].formatted_address ?? pendingGeocodeAddress,
+        );
+        setAddress(parts.address);
+        onAddressChange?.(parts.address, parts.zipCode || undefined);
         setCenter({ lat: loc.lat(), lng: loc.lng() });
         return;
       }

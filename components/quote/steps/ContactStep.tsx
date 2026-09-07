@@ -1,6 +1,6 @@
 "use client";
 
-import { BackButton } from "@/components/quote/BackButton";
+import { StepActions } from "@/components/quote/StepActions";
 import { PhoneNumberInput } from "@/components/quote/PhoneNumberInput";
 import { useRef, useState, type ReactNode } from "react";
 import {
@@ -17,6 +17,7 @@ import {
   type ContactFormValues,
   type PreferredContactMethod,
 } from "@/lib/validation/contactForm";
+import { splitAddressAndZip } from "@/lib/geo/address";
 import type { ContactInfo } from "@/types/quote";
 
 const inputBaseClass =
@@ -87,6 +88,7 @@ const FIELD_INPUT_IDS: Partial<Record<keyof ContactFormValues, string>> = {
 
 interface ContactStepProps {
   initialPropertyAddress?: string;
+  initialZipCode?: string;
   onBack: () => void;
   onSubmit: (values: ContactInfo) => void;
   isSubmitting: boolean;
@@ -94,14 +96,17 @@ interface ContactStepProps {
 
 export function ContactStep({
   initialPropertyAddress = "",
+  initialZipCode = "",
   onBack,
   onSubmit,
   isSubmitting,
 }: ContactStepProps) {
   const formRef = useRef<HTMLFormElement>(null);
+  const initialParts = splitAddressAndZip(initialPropertyAddress);
   const [values, setValues] = useState<ContactFormValues>({
     ...EMPTY_CONTACT_FORM_VALUES,
-    propertyAddress: initialPropertyAddress,
+    propertyAddress: initialParts.address,
+    zipCode: initialParts.zipCode || initialZipCode,
   });
   const [errors, setErrors] = useState<ContactFormErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof ContactFormValues, boolean>>>({});
@@ -160,6 +165,22 @@ export function ContactStep({
   }
 
   function handleBlur(field: keyof ContactFormValues) {
+    if (field === "propertyAddress") {
+      const parts = splitAddressAndZip(values.propertyAddress);
+      if (parts.zipCode) {
+        const next = {
+          ...values,
+          propertyAddress: parts.address,
+          zipCode: parts.zipCode,
+        };
+        setValues(next);
+        setTouched((prev) => ({ ...prev, propertyAddress: true, zipCode: true }));
+        setFieldError("propertyAddress", validatePropertyAddress(next.propertyAddress));
+        setFieldError("zipCode", validateZipCode(next.zipCode));
+        return;
+      }
+    }
+
     setTouched((prev) => ({ ...prev, [field]: true }));
     setFieldError(field === "phoneCountry" ? "phoneNational" : field, validateField(field, values));
   }
@@ -377,15 +398,23 @@ export function ContactStep({
         </FormField>
       </div>
 
-      <div className="flex items-center justify-between border-t border-asphalt-100 pt-5">
-        <BackButton onClick={onBack} disabled={isSubmitting} />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="btn-gradient rounded-md px-5 py-2.5 text-sm font-medium"
-        >
-          {isSubmitting ? "Saving…" : "See my estimate"}
-        </button>
+      <div className="border-t border-asphalt-200 pt-5">
+        <StepActions onBack={onBack} backDisabled={isSubmitting}>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-gradient shrink-0 rounded-md px-5 py-2.5 text-sm font-medium"
+          >
+            {isSubmitting ? (
+              "Saving…"
+            ) : (
+              <>
+                <span className="sm:hidden">See estimate</span>
+                <span className="hidden sm:inline">See my estimate</span>
+              </>
+            )}
+          </button>
+        </StepActions>
       </div>
     </form>
   );

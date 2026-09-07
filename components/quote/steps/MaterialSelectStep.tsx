@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BackButton } from "@/components/quote/BackButton";
+import { StepActions } from "@/components/quote/StepActions";
 import { SelectCard } from "@/components/quote/SelectCard";
 import { MATERIAL_CATEGORIES } from "@/lib/materials/categories";
 import type { MaterialListItem } from "@/types/material";
@@ -10,7 +10,6 @@ interface MaterialSelectStepProps {
   contractorSlug: string;
   onBack: () => void;
   onSubmit: (selection: { materialId: string; heightId: string }) => void;
-  isSubmitting: boolean;
 }
 
 type CategoryFilter = "all" | string;
@@ -19,7 +18,6 @@ export function MaterialSelectStep({
   contractorSlug,
   onBack,
   onSubmit,
-  isSubmitting,
 }: MaterialSelectStepProps) {
   const [materials, setMaterials] = useState<MaterialListItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -220,8 +218,7 @@ export function MaterialSelectStep({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <BackButton onClick={onBack} />
+      <StepActions onBack={onBack}>
         <button
           type="button"
           onClick={() =>
@@ -229,12 +226,12 @@ export function MaterialSelectStep({
             selectedHeightId &&
             onSubmit({ materialId: selectedMaterialId, heightId: selectedHeightId })
           }
-          disabled={!canContinue || isSubmitting}
-          className="btn-gradient rounded-md px-5 py-2.5 text-sm font-medium"
+          disabled={!canContinue}
+          className="btn-gradient shrink-0 rounded-md px-5 py-2.5 text-sm font-medium"
         >
           Continue
         </button>
-      </div>
+      </StepActions>
     </div>
   );
 }

@@ -17,6 +17,4 @@ export interface Contractor {
    * Materials/pricing for this contractor are loaded for this brand.
    */
   brandId: string;
-  /** @deprecated Prefer height unit prices from brand materials. Kept for local fallback. */
-  basePricePerSqFt: number;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { BackButton } from "@/components/quote/BackButton";
+import { StepActions } from "@/components/quote/StepActions";
 import { useState } from "react";
 import type { Measurement } from "@/types/quote";
 
@@ -52,16 +52,15 @@ export function ManualMeasureStep({ onBack, onComplete }: ManualMeasureStepProps
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <BackButton onClick={onBack} />
+      <StepActions onBack={onBack}>
         <button
           type="submit"
           disabled={!isValid}
-          className="btn-gradient rounded-md px-5 py-2.5 text-sm font-medium"
+          className="btn-gradient shrink-0 rounded-md px-5 py-2.5 text-sm font-medium"
         >
           Continue
         </button>
-      </div>
+      </StepActions>
     </form>
   );
 }

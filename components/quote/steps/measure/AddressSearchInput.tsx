@@ -1,13 +1,14 @@
 "use client";
 
 import { Autocomplete } from "@react-google-maps/api";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
+import { addressPartsFromComponents, splitAddressAndZip } from "@/lib/geo/address";
 import type { LatLngPoint } from "@/types/quote";
 
 interface AddressSearchInputProps {
   initialAddress?: string;
-  onAddressSelected: (address: string, center?: LatLngPoint) => void;
+  onAddressSelected: (address: string, center?: LatLngPoint, zipCode?: string) => void;
 }
 
 /**
@@ -19,20 +20,32 @@ export function AddressSearchInput({ initialAddress, onAddressSelected }: Addres
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [address, setAddress] = useState(initialAddress ?? "");
 
+  useEffect(() => {
+    setAddress(initialAddress ?? "");
+  }, [initialAddress]);
+
   function handlePlaceChanged() {
     const place = autocompleteRef.current?.getPlace();
-    const formattedAddress = place?.formatted_address ?? address;
+    const parts = addressPartsFromComponents(
+      place?.address_components,
+      place?.formatted_address ?? address,
+    );
     const lat = place?.geometry?.location?.lat();
     const lng = place?.geometry?.location?.lng();
-    setAddress(formattedAddress);
-    onAddressSelected(formattedAddress, lat !== undefined && lng !== undefined ? { lat, lng } : undefined);
+    setAddress(parts.address);
+    onAddressSelected(
+      parts.address,
+      lat !== undefined && lng !== undefined ? { lat, lng } : undefined,
+      parts.zipCode || undefined,
+    );
   }
 
   function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!address.trim()) return;
-    // No place selected from the dropdown — parent geocodes this before showing the map.
-    onAddressSelected(address.trim());
+    const parts = splitAddressAndZip(address.trim());
+    setAddress(parts.address);
+    onAddressSelected(parts.address, undefined, parts.zipCode || undefined);
   }
 
   if (!apiKeyConfigured) {

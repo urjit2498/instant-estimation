@@ -1,8 +1,10 @@
 "use client";
 
 import { GoogleMap, Marker, Polygon, Polyline } from "@react-google-maps/api";
-import { useCallback, useMemo, useRef, useState } from "react";
-import { BackButton } from "@/components/quote/BackButton";
+import { useCallback, useMemo, useState } from "react";
+import { DrawingToolbar } from "@/components/quote/DrawingToolbar";
+import { MapControls } from "@/components/quote/MapControls";
+import { StepActions } from "@/components/quote/StepActions";
 import { SegmentLengthLabels } from "@/components/quote/SegmentLengthLabels";
 import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import { computeAreaSqFt, computeLengthFt } from "@/lib/geo/polygon";
@@ -12,15 +14,11 @@ import type { LatLngPoint, Measurement, ShapeType } from "@/types/quote";
 const MAP_CONTAINER_STYLE = { width: "100%", height: "100%" };
 const MAP_OPTIONS: google.maps.MapOptions = {
   mapTypeId: "satellite",
-  streetViewControl: false,
-  mapTypeControl: false,
-  fullscreenControl: false,
+  disableDefaultUI: true,
+  cameraControl: false,
+  zoomControl: false,
   tilt: 0,
-  // Explicit rather than relying on defaults: always show the +/- zoom control, and always let a
-  // single mouse/touch drag pan the map (Google's "auto" gesture handling otherwise requires
-  // two-finger drag on touch devices / falls back to a "use two fingers" overlay).
-  zoomControl: true,
-  draggable: true,
+  // One-finger drag pans on touch (Google's "auto" otherwise shows a "use two fingers" overlay).
   gestureHandling: "greedy",
 };
 
@@ -36,25 +34,28 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
   const [shapeType, setShapeType] = useState<ShapeType>("polygon");
   const [path, setPath] = useState<LatLngPoint[]>([]);
   const [isDrawing, setIsDrawing] = useState(true);
+  const [panMode, setPanMode] = useState(false);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
 
-  const polygonRef = useRef<google.maps.Polygon | null>(null);
-  const polylineRef = useRef<google.maps.Polyline | null>(null);
+  const placingPoints = isDrawing && !panMode;
   const mapOptions = useMemo<google.maps.MapOptions>(
     () => ({
       ...MAP_OPTIONS,
-      ...(isDrawing
-        ? { draggableCursor: DRAWING_PEN_CURSOR, draggingCursor: DRAWING_PEN_CURSOR }
-        : {}),
+      ...(panMode
+        ? { draggableCursor: "grab", draggingCursor: "grabbing" }
+        : placingPoints
+          ? { draggableCursor: DRAWING_PEN_CURSOR, draggingCursor: DRAWING_PEN_CURSOR }
+          : {}),
     }),
-    [isDrawing]
+    [panMode, placingPoints]
   );
 
   const handleMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
-      if (!isDrawing || !e.latLng) return;
+      if (!placingPoints || !e.latLng) return;
       setPath((prev) => [...prev, { lat: e.latLng!.lat(), lng: e.latLng!.lng() }]);
     },
-    [isDrawing]
+    [placingPoints]
   );
 
   const updatePointAt = useCallback((index: number, latLng: google.maps.LatLng) => {
@@ -120,67 +121,25 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-asphalt-700">Shape:</span>
-        <button
-          type="button"
-          onClick={() => switchShapeType("polygon")}
-          className={`rounded-full px-3 py-1 ${shapeType === "polygon" ? "bg-asphalt-950 text-paper" : "bg-paper-raised text-asphalt-700 ring-1 ring-asphalt-200"}`}
-        >
-          Area (polygon)
-        </button>
-        <button
-          type="button"
-          onClick={() => switchShapeType("line")}
-          className={`rounded-full px-3 py-1 ${shapeType === "line" ? "bg-asphalt-950 text-paper" : "bg-paper-raised text-asphalt-700 ring-1 ring-asphalt-200"}`}
-        >
-          Line
-        </button>
-
-        <span className="mx-2 h-4 w-px bg-asphalt-200" aria-hidden />
-
-        <button
-          type="button"
-          onClick={undoLastPoint}
-          disabled={path.length === 0}
-          className="rounded-full bg-paper-raised px-3 py-1 text-asphalt-700 ring-1 ring-asphalt-200 disabled:opacity-40"
-        >
-          Undo point
-        </button>
-        <button
-          type="button"
-          onClick={clearShape}
-          disabled={path.length === 0}
-          className="rounded-full bg-paper-raised px-3 py-1 text-asphalt-700 ring-1 ring-asphalt-200 disabled:opacity-40"
-        >
-          Clear
-        </button>
-        {isDrawing ? (
-          <button
-            type="button"
-            onClick={() => setIsDrawing(false)}
-            disabled={!canFinish}
-            className="rounded-full bg-success px-3 py-1 text-white disabled:opacity-40"
-          >
-            Finish drawing
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsDrawing(true)}
-            className="rounded-full bg-paper-raised px-3 py-1 text-asphalt-700 ring-1 ring-asphalt-200"
-          >
-            Resume adding points
-          </button>
-        )}
-      </div>
+      <DrawingToolbar
+        shapeType={shapeType}
+        onShapeTypeChange={switchShapeType}
+        pointCount={path.length}
+        canFinish={canFinish}
+        isDrawing={isDrawing}
+        onUndo={undoLastPoint}
+        onClear={clearShape}
+        onToggleDrawing={() => setIsDrawing((prev) => !prev)}
+        finishLabel="Finish"
+        resumeLabel="Resume"
+      />
 
       <div
-        className={`relative -mx-4 h-80 w-[calc(100%+2rem)] overflow-hidden rounded-lg border border-asphalt-200 sm:-mx-6 sm:h-96 sm:w-[calc(100%+3rem)] lg:h-[32rem] xl:h-[40rem]${isDrawing ? " map-drawing-pen-cursor" : ""}`}
+        className={`relative -mx-4 h-80 w-[calc(100%+2rem)] overflow-hidden rounded-lg border border-asphalt-200 sm:-mx-6 sm:h-96 sm:w-[calc(100%+3rem)] lg:h-[32rem] xl:h-[40rem]${placingPoints ? " map-drawing-pen-cursor" : ""}`}
       >
         {isLoaded ? (
           <>
-            {isDrawing && (
+            {placingPoints && (
               <style>{`
                 .map-drawing-pen-cursor .gm-style canvas {
                   cursor: ${DRAWING_PEN_CURSOR} !important;
@@ -191,6 +150,8 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
               mapContainerStyle={MAP_CONTAINER_STYLE}
               center={center}
               zoom={20}
+              onLoad={setMap}
+              onUnmount={() => setMap(null)}
               onClick={handleMapClick}
               options={mapOptions}
             >
@@ -199,8 +160,6 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
                   path={path}
                   editable={!isDrawing}
                   draggable={false}
-                  onLoad={(p) => (polygonRef.current = p)}
-                  onMouseUp={() => polygonRef.current && syncPathFromOverlay(polygonRef.current)}
                   options={{
                     fillColor: "#17181c",
                     fillOpacity: isDrawing ? 0.12 : 0.25,
@@ -208,8 +167,6 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
                     strokeOpacity: isDrawing ? 0.6 : 1,
                     strokeWeight: 2,
                   }}
-                  // Fires on vertex add/move/remove — the correct hook for keeping path state in
-                  // sync while editing (unlike onMouseUp, which misses drag-released-off-shape cases).
                   onEdit={(p) => syncPathFromOverlay(p)}
                 />
               )}
@@ -218,7 +175,6 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
                   path={path}
                   editable={!isDrawing}
                   onLoad={(p) => {
-                    polylineRef.current = p;
                     // Polyline has no onEdit prop (unlike Polygon), so wire the same
                     // insert/set/remove path listeners manually.
                     const mvcPath = p.getPath();
@@ -242,7 +198,7 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
                   <Marker
                     key={i}
                     position={point}
-                    draggable
+                    draggable={!panMode}
                     onDrag={(e) => e.latLng && updatePointAt(i, e.latLng)}
                     onDragEnd={(e) => e.latLng && updatePointAt(i, e.latLng)}
                     options={{
@@ -267,10 +223,15 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
               )}
             </GoogleMap>
 
-            {/* Live status badge, pinned to the map itself — always visible while drawing, no
-                need to look away from the map to know it's registering clicks or to see the size. */}
-            <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2 rounded-full bg-paper-raised/95 px-3 py-1.5 text-xs font-medium text-asphalt-950 shadow-md ring-1 ring-asphalt-200">
-              {isDrawing ? (
+            <MapControls map={map} panMode={panMode} onPanModeChange={setPanMode} />
+
+            <div className="pointer-events-none absolute left-3 top-3 flex max-w-[calc(100%-4.5rem)] items-center gap-2 rounded-full bg-paper-raised/95 px-3 py-1.5 text-xs font-medium text-asphalt-950 shadow-md ring-1 ring-asphalt-200">
+              {panMode ? (
+                <>
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
+                  <span>Drag to move</span>
+                </>
+              ) : isDrawing ? (
                 <>
                   <span className="relative flex h-2 w-2 shrink-0">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
@@ -278,14 +239,14 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
                   </span>
                   <span>
                     {path.length === 0
-                      ? "Drawing — click the map to place your first point"
-                      : `Drawing — ${path.length} point${path.length === 1 ? "" : "s"} placed (drag to adjust)`}
+                      ? "Tap to place a point"
+                      : `${path.length} point${path.length === 1 ? "" : "s"} · drag to adjust`}
                   </span>
                 </>
               ) : (
                 <>
                   <span className="h-2 w-2 shrink-0 rounded-full bg-asphalt-300" />
-                  <span>Editing — drag a point to adjust it</span>
+                  <span>Drag a point to adjust</span>
                 </>
               )}
               {measurementLabel && (
@@ -302,13 +263,14 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-3">
-        <BackButton onClick={onBack} />
-        <p className="min-w-0 flex-1 text-sm text-asphalt-700">
-          {measurementLabel
+      <StepActions
+        onBack={onBack}
+        message={
+          measurementLabel
             ? `${shapeType === "polygon" ? "Area" : "Length"}: ${measurementLabel}`
-            : "Draw a shape to see its measurement."}
-        </p>
+            : "Draw a shape to see its measurement."
+        }
+      >
         <button
           type="button"
           onClick={() => measurement && onComplete(measurement)}
@@ -317,7 +279,7 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
         >
           Continue
         </button>
-      </div>
+      </StepActions>
     </div>
   );
 }

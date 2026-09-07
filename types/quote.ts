@@ -25,7 +25,7 @@ export interface Measurement {
   path?: LatLngPoint[];
 }
 
-/** Estimate shown after create-quote (also produced by POST /api/quote/calculate). */
+/** Estimate shown after create-quote. */
 export interface PriceEstimate {
   price: number;
   currency: "USD";
@@ -56,19 +56,4 @@ export interface ContactInfo {
   zipCode: string;
   preferredContactMethod: PreferredContactMethod;
   notes?: string;
-}
-
-/** Body sent to POST /api/quote/submit (mocked). Mirrors what the real save+email API will expect. */
-export interface QuoteSubmission {
-  contractorSlug: string;
-  measurement: Measurement;
-  materialId: string;
-  heightId: string;
-  priceEstimate: PriceEstimate;
-  contact: ContactInfo;
-}
-
-export interface QuoteSubmissionResult {
-  success: true;
-  confirmationId: string;
 }

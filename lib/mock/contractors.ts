@@ -16,7 +16,6 @@ export const MOCK_CONTRACTORS: Record<string, Contractor> = {
     email: "quotes@test-brand.example",
     logoUrl: null,
     brandId: "6b71c69c-66de-41e8-a24b-0e7c8b3dd241",
-    basePricePerSqFt: 0.22,
   },
   "summit-paving": {
     slug: "summit-paving",
@@ -28,7 +27,6 @@ export const MOCK_CONTRACTORS: Record<string, Contractor> = {
     logoUrl: null,
     // Same test brand until each contractor has its own brand row.
     brandId: "6b71c69c-66de-41e8-a24b-0e7c8b3dd241",
-    basePricePerSqFt: 0.27,
   },
 };
 

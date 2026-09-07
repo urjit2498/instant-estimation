@@ -4,9 +4,9 @@ Frontend for an instant quote tool for local service businesses (starting with d
 sealcoating contractors). Homeowners enter their address, trace their driveway on a satellite
 map, answer a couple of pricing questions, and get an instant price estimate.
 
-This is the **frontend only**. The pricing calculation API and the save-to-database +
-confirmation-email API are being built separately and are mocked here (see
-`app/api/quote/calculate` and `app/api/quote/submit`) so frontend work isn't blocked.
+This is the **frontend only**. Quotes are created through the `create-quote` Edge Function
+(proxied by `app/api/quote/create`); materials come from `get-brand-details` via
+`app/api/materials`.
 
 ## Getting started
 
@@ -29,13 +29,13 @@ crashing — enough to see the rest of the flow and UI.
 
 ## Structure
 
-- `app/` — routes: `/` (landing), `/quote/[contractorSlug]` (quote flow), mock API routes under
-  `app/api/quote/`, plus `robots.ts`, `sitemap.ts`, `manifest.ts`
-- `components/` — `layout/` (header/footer), `home/` (landing page), `quote/` (the multi-step
-  quote flow and its step components), `seo/` (JSON-LD)
-- `lib/` — `mock/` (placeholder contractor + pricing data), `geo/` (Turf.js area/length helpers),
-  `validation/` (contact form validation), `env.ts`
-- `hooks/` — `useGoogleMapsLoader`, `useDebouncedValue`
+- `app/` — routes: `/` (landing), `/quote/[contractorSlug]` (quote flow), API routes under
+  `app/api/`, plus `robots.ts`, `sitemap.ts`, `manifest.ts`
+- `components/` — `layout/` (header/footer), `quote/` (the multi-step quote flow and its step
+  components), `seo/` (JSON-LD)
+- `lib/` — `mock/` (placeholder contractor data), `geo/` (Turf.js area/length helpers),
+  `supabase/` (Edge Function clients), `validation/` (contact form validation), `env.ts`
+- `hooks/` — `useGoogleMapsLoader`
 - `types/` — shared TypeScript types
 
 See inline `TODO` comments throughout for what needs real data/APIs before production.

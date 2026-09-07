@@ -1,20 +1,18 @@
 "use client";
 
-import { BackButton } from "@/components/quote/BackButton";
+import { StepActions } from "@/components/quote/StepActions";
 import type { PriceEstimate } from "@/types/quote";
 
 interface EstimateStepProps {
   estimate: PriceEstimate;
   onBack: () => void;
   onContinue: () => void;
-  isSubmitting?: boolean;
 }
 
 export function EstimateStep({
   estimate,
   onBack,
   onContinue,
-  isSubmitting = false,
 }: EstimateStepProps) {
   const { breakdown } = estimate;
   const quantityLabel = breakdown.quantityUnit === "ft" ? "Length" : "Area";
@@ -38,7 +36,7 @@ export function EstimateStep({
         </p>
       </div>
 
-      <dl className="grid grid-cols-2 gap-3 text-sm">
+      <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
         <div className="rounded-md border border-asphalt-200 bg-paper-raised p-3">
           <dt className="text-asphalt-700">{quantityLabel}</dt>
           <dd className="font-mono font-medium text-asphalt-950">
@@ -63,17 +61,15 @@ export function EstimateStep({
         </div>
       </dl>
 
-      <div className="flex items-center justify-between">
-        <BackButton onClick={onBack} disabled={isSubmitting} />
+      <StepActions onBack={onBack}>
         <button
           type="button"
           onClick={onContinue}
-          disabled={isSubmitting}
-          className="btn-gradient rounded-md px-5 py-2.5 text-sm font-medium"
+          className="btn-gradient shrink-0 rounded-md px-5 py-2.5 text-sm font-medium"
         >
           Finish
         </button>
-      </div>
+      </StepActions>
     </div>
   );
 }
