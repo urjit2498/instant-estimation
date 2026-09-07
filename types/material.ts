@@ -20,13 +20,3 @@ export interface MaterialListItem {
   category: string | null;
   heights: MaterialHeightOption[];
 }
-
-/** @deprecated Prefer MaterialListItem + heights from the brand API. */
-export interface Material {
-  id: string;
-  name: string;
-  imageUrl: string | null;
-  shortDescription: string;
-  category: string;
-  priceMultiplier: number;
-}
