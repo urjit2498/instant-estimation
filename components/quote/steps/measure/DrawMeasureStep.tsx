@@ -6,6 +6,7 @@ import { AddressSearchInput } from "@/components/quote/steps/measure/AddressSear
 import { DrawStep } from "@/components/quote/steps/measure/DrawStep";
 import { addressPartsFromComponents, splitAddressAndZip } from "@/lib/geo/address";
 import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
+import { MapquoLoadingOverlay } from "@/components/layout/MapquoLoadingOverlay";
 import type { LatLngPoint, Measurement } from "@/types/quote";
 
 interface DrawMeasureStepProps {
@@ -90,10 +91,11 @@ export function DrawMeasureStep({
     return () => {
       cancelled = true;
     };
-  }, [pendingGeocodeAddress, isLoaded]);
+  }, [pendingGeocodeAddress, isLoaded, onAddressChange]);
 
   return (
     <div className="flex flex-col gap-4">
+      <MapquoLoadingOverlay show={isResolvingLocation} label="Finding your property…" />
       <div>
         <h2 className="font-heading text-xl font-semibold text-asphalt-950">
           Find your property, then trace your driveway
@@ -128,19 +130,13 @@ export function DrawMeasureStep({
       ) : (
         <>
           <div className="-mx-4 flex h-80 w-[calc(100%+2rem)] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-asphalt-200 bg-paper-raised px-6 text-center sm:-mx-6 sm:h-96 sm:w-[calc(100%+3rem)]">
-            {isResolvingLocation ? (
-              <p className="text-sm text-asphalt-700">Finding your property…</p>
-            ) : (
-              <>
-                <p className="font-heading text-sm font-semibold text-asphalt-950">
-                  Map will appear here
-                </p>
-                <p className="max-w-sm text-sm text-asphalt-700">
-                  Enter your property address above and choose it from the suggestions to load a
-                  satellite view you can trace on.
-                </p>
-              </>
-            )}
+            <p className="font-heading text-sm font-semibold text-asphalt-950">
+              Map will appear here
+            </p>
+            <p className="max-w-sm text-sm text-asphalt-700">
+              Enter your property address above and choose it from the suggestions to load a
+              satellite view you can trace on.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <BackButton onClick={onBack} />

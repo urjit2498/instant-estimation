@@ -1,18 +1,33 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 
-// TODO: replace with real business name/logo once branding is finalized.
-const SITE_NAME = "Instant Quote Engine";
+const FALLBACK_NAME = "Instant Quote Engine";
 
-export function Header() {
+interface HeaderProps {
+  brandName?: string | null;
+  logoUrl?: string | null;
+  brandId?: string | null;
+}
+
+export function Header({ brandName, logoUrl, brandId }: HeaderProps) {
+  const name = brandName?.trim() || FALLBACK_NAME;
+  const href = brandId ? `/?brandId=${encodeURIComponent(brandId)}` : "/";
+
   return (
     <header className="header-gradient-band border-b border-asphalt-950">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          {/* TODO: replace with a real logo mark once branding is finalized. */}
-          <span className="badge-gradient flex h-8 w-8 shrink-0 items-center justify-center rounded-md font-heading text-sm font-bold text-white">
-            IQ
-          </span>
-          <span className="font-heading truncate text-lg font-semibold text-paper">{SITE_NAME}</span>
+        <Link href={href} className="flex min-w-0 items-center gap-2.5">
+          {logoUrl ? (
+            <BrandLogo
+              src={
+                brandId
+                  ? `/brand-icon?brandId=${encodeURIComponent(brandId)}`
+                  : logoUrl
+              }
+              alt={`${name} logo`}
+            />
+          ) : null}
+          <span className="font-heading truncate text-lg font-semibold text-paper">{name}</span>
         </Link>
 
         <span className="badge-gradient hidden rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white sm:inline-block">

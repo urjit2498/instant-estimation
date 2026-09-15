@@ -29,7 +29,7 @@ crashing — enough to see the rest of the flow and UI.
 
 ## Structure
 
-- `app/` — routes: `/` (landing), `/quote/[contractorSlug]` (quote flow), API routes under
+- `app/` — routes: `/` (quote flow, `?brandId=`), `/quote/[contractorSlug]` (legacy contractor URL), API routes under
   `app/api/`, plus `robots.ts`, `sitemap.ts`, `manifest.ts`
 - `components/` — `layout/` (header/footer), `quote/` (the multi-step quote flow and its step
   components), `seo/` (JSON-LD)

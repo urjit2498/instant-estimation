@@ -13,8 +13,10 @@ export function ConfirmationStep({ contractor, confirmationId }: ConfirmationSte
       </div>
       <h2 className="font-heading text-xl font-semibold text-asphalt-950">You&apos;re all set!</h2>
       <p className="max-w-sm text-sm text-asphalt-700">
-        We&apos;ve sent your estimate by email. {contractor.name} will follow up at{" "}
-        {contractor.phone} if you have questions.
+        We&apos;ve sent your estimate by email.{" "}
+        {contractor.phone
+          ? `${contractor.name} will follow up at ${contractor.phone} if you have questions.`
+          : `${contractor.name} will follow up if you have questions.`}
       </p>
       <p className="font-mono text-xs text-asphalt-300">Confirmation #{confirmationId}</p>
     </div>

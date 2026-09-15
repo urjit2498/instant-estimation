@@ -6,21 +6,19 @@ interface LocalBusinessJsonLdProps {
 
 /**
  * schema.org LocalBusiness structured data for a contractor's quote page.
- * TODO: fill in real fields (address, geo coordinates, priceRange, sameAs social links, real
- * logo/image URLs) once actual business details are available — everything here beyond name
- * comes straight from the mock contractor data.
  */
 export function LocalBusinessJsonLd({ contractor }: LocalBusinessJsonLdProps) {
-  const jsonLd = {
+  const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: contractor.name,
     description: contractor.tagline,
-    telephone: contractor.phone,
-    email: contractor.email,
     areaServed: contractor.serviceArea,
-    // TODO: real "@type" is likely more specific, e.g. "PavingContractor" — confirm with the business.
   };
+
+  if (contractor.phone) jsonLd.telephone = contractor.phone;
+  if (contractor.email) jsonLd.email = contractor.email;
+  if (contractor.logoUrl) jsonLd.image = contractor.logoUrl;
 
   return (
     <script

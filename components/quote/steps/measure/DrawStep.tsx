@@ -9,6 +9,7 @@ import { SegmentLengthLabels } from "@/components/quote/SegmentLengthLabels";
 import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import { computeAreaSqFt, computeLengthFt } from "@/lib/geo/polygon";
 import { DRAWING_PEN_CURSOR } from "@/lib/map/drawingCursor";
+import { MapquoLoader } from "@/components/layout/MapquoLoader";
 import type { LatLngPoint, Measurement, ShapeType } from "@/types/quote";
 
 const MAP_CONTAINER_STYLE = { width: "100%", height: "100%" };
@@ -23,13 +24,14 @@ const MAP_OPTIONS: google.maps.MapOptions = {
 };
 
 interface DrawStepProps {
-  /** Required — parent only mounts this step after an address location is resolved. */
+  /** Required — parent always provides a center (property or brand overview). */
   center: LatLngPoint;
+  zoom?: number;
   onBack: () => void;
   onComplete: (measurement: Measurement) => void;
 }
 
-export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
+export function DrawStep({ center, zoom = 20, onBack, onComplete }: DrawStepProps) {
   const { isLoaded, loadError, apiKeyConfigured } = useGoogleMapsLoader();
   const [shapeType, setShapeType] = useState<ShapeType>("polygon");
   const [path, setPath] = useState<LatLngPoint[]>([]);
@@ -149,7 +151,7 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
             <GoogleMap
               mapContainerStyle={MAP_CONTAINER_STYLE}
               center={center}
-              zoom={20}
+              zoom={zoom}
               onLoad={setMap}
               onUnmount={() => setMap(null)}
               onClick={handleMapClick}
@@ -257,9 +259,7 @@ export function DrawStep({ center, onBack, onComplete }: DrawStepProps) {
             </div>
           </>
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-asphalt-300">
-            Loading map…
-          </div>
+          <MapquoLoader variant="inline" label="Loading map…" />
         )}
       </div>
 

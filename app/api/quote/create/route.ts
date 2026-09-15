@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { QUOTES_UNAVAILABLE_API_ERROR } from "@/lib/brand/quotesUnavailable";
 import { getContractorBySlug } from "@/lib/mock/contractors";
 import { getMeasurementQuantity } from "@/lib/pricing/brandPrice";
 import {
@@ -6,11 +7,14 @@ import {
   createdQuoteToPriceEstimate,
   toCreateQuotePayload,
 } from "@/lib/supabase/createQuote";
+import { fetchBrandDetails } from "@/lib/supabase/brandDetails";
+import { isSubscriptionActive } from "@/lib/subscription/isActive";
 import { validateContactInfo } from "@/lib/validation/contactForm";
 import type { ContactInfo, Measurement } from "@/types/quote";
 
 interface CreateQuoteRequestBody {
-  contractorSlug: string;
+  brandId?: string;
+  contractorSlug?: string;
   contact: ContactInfo;
   materialId: string;
   heightId: string;
@@ -23,11 +27,19 @@ interface CreateQuoteRequestBody {
  */
 export async function POST(request: Request) {
   const body = (await request.json()) as CreateQuoteRequestBody;
-  const { contractorSlug, contact, materialId, heightId, measurement } = body;
+  const { contact, materialId, heightId, measurement } = body;
 
-  const contractor = getContractorBySlug(contractorSlug);
-  if (!contractor) {
-    return NextResponse.json({ error: "Unknown contractor" }, { status: 404 });
+  let brandId = body.brandId;
+  if (!brandId && body.contractorSlug) {
+    const contractor = getContractorBySlug(body.contractorSlug);
+    if (!contractor) {
+      return NextResponse.json({ error: "Unknown contractor" }, { status: 404 });
+    }
+    brandId = contractor.brandId;
+  }
+
+  if (!brandId) {
+    return NextResponse.json({ error: "brandId is required" }, { status: 400 });
   }
 
   if (!materialId || !heightId || !measurement) {
@@ -48,7 +60,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const payload = toCreateQuotePayload(contact, contractor.brandId, {
+    const details = await fetchBrandDetails(brandId);
+    if (!isSubscriptionActive(details.subscription)) {
+      return NextResponse.json({ error: QUOTES_UNAVAILABLE_API_ERROR }, { status: 403 });
+    }
+
+    const payload = toCreateQuotePayload(contact, brandId, {
       materialId,
       heightId,
       estimatedSqFt: quantity,

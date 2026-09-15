@@ -33,10 +33,22 @@ export interface BrandRecord {
   latitude: number;
   longitude: number;
   user: string;
+  /** Public Supabase Storage URL for the brand logo. */
+  logo?: string | null;
+}
+
+export interface BrandSubscription {
+  id: string;
+  created_at: string;
+  brand: string;
+  start_date: string;
+  end_date: string;
 }
 
 export interface BrandDetailsData {
   brand: BrandRecord;
+  /** Present only when the brand currently has a tool subscription. */
+  subscription?: BrandSubscription | null;
   material: BrandMaterial[];
 }
 

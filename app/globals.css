@@ -174,3 +174,122 @@ body {
 .price-reveal-gradient {
   background-image: linear-gradient(135deg, var(--color-asphalt-950) 0%, var(--color-asphalt-800) 65%, var(--color-accent-700) 100%);
 }
+
+/* Mapquo product lockup — single-line “Powered by Mapquo”. */
+.mapquo-lockup {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid rgba(229, 226, 218, 0.95);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 10px 28px rgba(23, 24, 28, 0.07);
+  backdrop-filter: blur(10px);
+}
+
+.mapquo-kicker {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-asphalt-700);
+}
+
+.mapquo-wordmark {
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  background-image: linear-gradient(
+    120deg,
+    var(--color-asphalt-950) 0%,
+    var(--color-accent-700) 42%,
+    var(--color-accent) 78%,
+    var(--color-accent-bright) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Mapquo loading overlay — spinner + label in the center; credit stays at the bottom. */
+.mapquo-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(55, 58, 64, 0.38);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.mapquo-loader-inline {
+  display: flex;
+  height: 100%;
+  min-height: 12rem;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  background: rgba(55, 58, 64, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.mapquo-loader-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mapquo-loader-label {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(23, 24, 28, 0.35);
+}
+
+.mapquo-loader-credit {
+  position: absolute;
+  bottom: 1.5rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 28px rgba(23, 24, 28, 0.12);
+}
+
+.mapquo-loader-orbit {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.28);
+  border-top-color: #fff;
+  animation: mapquo-loader-spin 0.75s linear infinite;
+}
+
+@keyframes mapquo-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapquo-loader-orbit {
+    animation: none;
+    border-top-color: var(--color-accent);
+  }
+}

@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { PageFrame } from "@/components/layout/PageFrame";
+import { QuoteExperience } from "@/components/quote/QuoteExperience";
+import { QuoteUnavailable } from "@/components/quote/QuoteUnavailable";
+import { loadQuoteBrand } from "@/lib/brand/loadQuoteBrand";
+import { metadataFromQuoteBrand } from "@/lib/brand/pageMetadata";
 import { getAllContractorSlugs, getContractorBySlug } from "@/lib/mock/contractors";
-import { LocalBusinessJsonLd } from "@/components/seo/LocalBusinessJsonLd";
-import { QuoteFlow } from "@/components/quote/QuoteFlow";
+
+export const dynamic = "force-dynamic";
 
 interface QuotePageProps {
   params: Promise<{ contractorSlug: string }>;
@@ -15,46 +20,70 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: QuotePageProps): Promise<Metadata> {
   const { contractorSlug } = await params;
-  const contractor = getContractorBySlug(contractorSlug);
-  if (!contractor) return {};
+  const listed = getContractorBySlug(contractorSlug);
+  if (!listed) return {};
 
-  return {
-    title: `Get a Quote from ${contractor.name}`,
-    description: contractor.tagline,
-  };
+  const result = await loadQuoteBrand(listed.brandId);
+  return metadataFromQuoteBrand(result, listed.brandId);
 }
 
-// The page shell (heading, contractor info, JSON-LD) is server-rendered so it stays crawlable.
-// The measurement/material/contact/estimate experience inside <QuoteFlow> is necessarily a
-// client component — Google Maps JS, canvas-based tracing, and multi-step form state all
-// require the browser — but it is mounted inside this server-rendered shell rather than
-// replacing the whole page, so crawlers still see the contractor name, description, and
-// structured data even without executing JS.
 export default async function QuotePage({ params, searchParams }: QuotePageProps) {
   const { contractorSlug } = await params;
   const { address, lat, lng } = await searchParams;
 
-  const contractor = getContractorBySlug(contractorSlug);
-  if (!contractor) notFound();
+  const listed = getContractorBySlug(contractorSlug);
+  if (!listed) notFound();
 
-  const initialCenter = lat && lng ? { lat: Number(lat), lng: Number(lng) } : undefined;
+  const result = await loadQuoteBrand(listed.brandId);
+  const brand =
+    result.status === "active" || result.status === "inactive" ? result.contractor : null;
+
+  const frame = {
+    brandName: brand?.name ?? listed.name,
+    logoUrl: brand?.logoUrl ?? listed.logoUrl,
+    brandId: listed.brandId,
+  };
+
+  if (result.status === "error") {
+    return (
+      <PageFrame {...frame}>
+        <QuoteUnavailable variant="error" />
+      </PageFrame>
+    );
+  }
+
+  if (result.status === "inactive") {
+    return (
+      <PageFrame {...frame}>
+        <QuoteUnavailable variant="inactive" brandName={frame.brandName} />
+      </PageFrame>
+    );
+  }
+
+  if (result.status !== "active") {
+    return (
+      <PageFrame {...frame}>
+        <QuoteUnavailable variant="error" />
+      </PageFrame>
+    );
+  }
+
+  const contractor = {
+    ...result.contractor,
+    slug: listed.slug,
+    phone: listed.phone,
+    email: listed.email,
+  };
+
+  const queryCenter = lat && lng ? { lat: Number(lat), lng: Number(lng) } : undefined;
 
   return (
-    <div className="pb-10">
-      <LocalBusinessJsonLd contractor={contractor} />
-
-      <div className="mx-auto max-w-4xl px-4 pt-8 text-center sm:px-6">
-        <h1 className="font-heading text-2xl font-bold text-asphalt-950">
-          Get your quote from {contractor.name}
-        </h1>
-        <p className="mt-1 text-sm text-asphalt-700">{contractor.tagline}</p>
-      </div>
-
-      <QuoteFlow
+    <PageFrame {...frame}>
+      <QuoteExperience
         contractor={contractor}
         initialAddress={address ?? ""}
-        initialCenter={initialCenter}
+        initialCenter={queryCenter}
       />
-    </div>
+    </PageFrame>
   );
 }

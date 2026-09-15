@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
-import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
 import { PageBackground } from "@/components/layout/PageBackground";
+import { PoweredByMapquo } from "@/components/layout/PoweredByMapquo";
 import "./globals.css";
 
 const inter = Inter({
@@ -23,7 +22,6 @@ const plexMono = IBM_Plex_Mono({
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-// TODO: replace all business details below with the real business name, description, and OG image.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -38,7 +36,6 @@ export const metadata: Metadata = {
       "Get an instant, no-visit-required price estimate for driveway sealcoating.",
     url: SITE_URL,
     siteName: "Instant Quote Engine",
-    // TODO: add a real /public/og-image.png (1200x630) before launch.
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
     locale: "en_US",
     type: "website",
@@ -54,9 +51,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="relative flex min-h-full flex-col bg-paper text-asphalt-950">
         <PageBackground />
-        <Header />
-        <main className="relative z-10 flex-1">{children}</main>
-        <Footer />
+        {children}
+        <PoweredByMapquo />
       </body>
     </html>
   );

@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { StepActions } from "@/components/quote/StepActions";
 import { SelectCard } from "@/components/quote/SelectCard";
 import { MATERIAL_CATEGORIES } from "@/lib/materials/categories";
+import { MapquoLoadingOverlay } from "@/components/layout/MapquoLoadingOverlay";
 import type { MaterialListItem } from "@/types/material";
 
 interface MaterialSelectStepProps {
-  contractorSlug: string;
+  brandId: string;
   onBack: () => void;
   onSubmit: (selection: { materialId: string; heightId: string }) => void;
 }
@@ -15,7 +16,7 @@ interface MaterialSelectStepProps {
 type CategoryFilter = "all" | string;
 
 export function MaterialSelectStep({
-  contractorSlug,
+  brandId,
   onBack,
   onSubmit,
 }: MaterialSelectStepProps) {
@@ -30,7 +31,7 @@ export function MaterialSelectStep({
     setMaterials(null);
     setLoadError(null);
 
-    fetch(`/api/materials?contractorSlug=${encodeURIComponent(contractorSlug)}`)
+    fetch(`/api/materials?brandId=${encodeURIComponent(brandId)}`)
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to load materials");
@@ -48,7 +49,7 @@ export function MaterialSelectStep({
     return () => {
       cancelled = true;
     };
-  }, [contractorSlug]);
+  }, [brandId]);
 
   const filteredMaterials = useMemo(() => {
     if (!materials) return null;
@@ -82,6 +83,7 @@ export function MaterialSelectStep({
 
   return (
     <div className="flex flex-col gap-5">
+      <MapquoLoadingOverlay show={!materials && !loadError} label="Loading materials…" />
       <div>
         <h2 className="font-heading text-xl font-semibold text-asphalt-950">Choose your material</h2>
         <p className="mt-1 text-sm text-asphalt-700">
@@ -132,11 +134,7 @@ export function MaterialSelectStep({
       )}
 
       {!materials && !loadError && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-56 animate-pulse rounded-xl bg-asphalt-200/60" />
-          ))}
-        </div>
+        <div className="h-56" aria-hidden />
       )}
 
       {materials && materials.length === 0 && (

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getCategoryTitle } from "@/lib/materials/categories";
+import { QUOTES_UNAVAILABLE_API_ERROR } from "@/lib/brand/quotesUnavailable";
+import { materialsFromBrandDetails } from "@/lib/materials/fromBrandDetails";
 import { getContractorBySlug } from "@/lib/mock/contractors";
 import { fetchBrandDetails } from "@/lib/supabase/brandDetails";
-import type { MaterialListItem } from "@/types/material";
+import { isSubscriptionActive } from "@/lib/subscription/isActive";
 
 /**
- * Proxies `get-brand-details` and returns the public materials list for a contractor/brand.
- * Pricing stays on the server for estimate calculation — heights include unit prices here so
- * the UI can show options; the calculate route re-fetches and re-validates before quoting.
+ * Proxies `get-brand-details` and returns the public materials list for a brand.
+ * Brands without an active subscription cannot load materials.
  *
  * Query: ?brandId=... OR ?contractorSlug=... (slug resolves to brandId via contractor mock).
  */
@@ -34,20 +34,11 @@ export async function GET(request: Request) {
 
   try {
     const details = await fetchBrandDetails(brandId);
-    const materials: MaterialListItem[] = details.material.map((m) => ({
-      id: m.id,
-      name: m.title,
-      imageUrl: m.image || null,
-      shortDescription: m.description,
-      categoryId: m.category || null,
-      category: getCategoryTitle(m.category),
-      heights: m.height.map((h) => ({
-        id: h.id,
-        title: h.title,
-        price: h.price,
-      })),
-    }));
-    return NextResponse.json(materials);
+    if (!isSubscriptionActive(details.subscription)) {
+      return NextResponse.json({ error: QUOTES_UNAVAILABLE_API_ERROR }, { status: 403 });
+    }
+
+    return NextResponse.json(materialsFromBrandDetails(details.material ?? []));
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to load materials";
     return NextResponse.json({ error: message }, { status: 502 });

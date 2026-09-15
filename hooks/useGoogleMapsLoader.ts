@@ -5,7 +5,7 @@ const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
 /**
  * Shared loader for the Google Maps JS API. Uses a fixed `id` so calling this from multiple
- * components (landing page autocomplete, quote flow map) reuses the same script tag instead of
+ * components (address autocomplete, quote flow map) reuses the same script tag instead of
  * injecting it twice.
  */
 export function useGoogleMapsLoader() {

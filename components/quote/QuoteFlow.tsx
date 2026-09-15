@@ -16,31 +16,29 @@ import { MaterialSelectStep } from "@/components/quote/steps/MaterialSelectStep"
 import { EstimateStep } from "@/components/quote/steps/EstimateStep";
 import { ContactStep } from "@/components/quote/steps/ContactStep";
 import { ConfirmationStep } from "@/components/quote/steps/ConfirmationStep";
+import { MapquoLoader } from "@/components/layout/MapquoLoader";
+import { MapquoLoadingOverlay } from "@/components/layout/MapquoLoadingOverlay";
 
 // Google Maps + Turf are browser-only and heavy — load them only when the user picks a measure method.
 const DrawMeasureStep = dynamic(
   () =>
     import("@/components/quote/steps/measure/DrawMeasureStep").then((mod) => mod.DrawMeasureStep),
-  { ssr: false, loading: () => <MeasureStepLoading label="Loading map…" /> },
+  { ssr: false, loading: () => <MapquoLoader label="Loading map…" /> },
 );
 const UploadMeasureStep = dynamic(
   () =>
     import("@/components/quote/steps/measure/UploadMeasureStep").then(
       (mod) => mod.UploadMeasureStep,
     ),
-  { ssr: false, loading: () => <MeasureStepLoading label="Loading upload tool…" /> },
+  { ssr: false, loading: () => <MapquoLoader label="Loading upload tool…" /> },
 );
 const ManualMeasureStep = dynamic(
   () =>
     import("@/components/quote/steps/measure/ManualMeasureStep").then(
       (mod) => mod.ManualMeasureStep,
     ),
-  { ssr: false },
+  { ssr: false, loading: () => <MapquoLoader label="Loading…" /> },
 );
-
-function MeasureStepLoading({ label }: { label: string }) {
-  return <p className="py-8 text-center text-sm text-asphalt-700">{label}</p>;
-}
 
 type Step = "method" | "measure" | "material" | "contact" | "estimate" | "confirmation";
 
@@ -101,7 +99,7 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contractorSlug: contractor.slug,
+          brandId: contractor.brandId,
           contact: contactInfo,
           materialId,
           heightId,
@@ -139,6 +137,7 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
 
   return (
     <div className="flex flex-col gap-6">
+      <MapquoLoadingOverlay show={isSubmitting} label="Getting your estimate…" />
       <ProgressBar currentStepIndex={STEP_INDEX[step]} />
 
       <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
@@ -187,7 +186,7 @@ export function QuoteFlow({ contractor, initialAddress, initialCenter }: QuoteFl
 
         {step === "material" && (
           <MaterialSelectStep
-            contractorSlug={contractor.slug}
+            brandId={contractor.brandId}
             onBack={() => setStep("measure")}
             onSubmit={handleMaterialSubmit}
           />
